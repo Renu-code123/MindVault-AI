@@ -23,7 +23,7 @@ Every piece of data is scoped to the authenticated user's UID. No user can acces
 |---|---|
 | 🤖 **AI Reflection Chat** | Multi-turn conversation with Gemini to explore emotions, decisions, and goals |
 | 📖 **Auto Journal Archiving** | Gemini distills each reflection session into a structured journal entry (title, summary, mood, topics, tags) |
-| 📊 **AI Growth Insights** | Longitudinal pattern detection across your entire journal history — mood rhythms, recurring topics, tailored prompts |
+| 📊 **AI Growth Insights** | Longitudinal pattern detection across your journal history — mood rhythms, recurring topics, tailored prompts |
 | 🔒 **Security Audit View** | Live interactive demo of the zero-trust architecture with real cross-user isolation tests |
 | 🔍 **Journal Vault** | Searchable, filterable journal archive with grid/list views and JSON export |
 | 🎵 **Zen Soundscapes** | Ambient audio (rain, ocean waves, brown noise, theta binaural) for focus during reflection |
@@ -55,13 +55,12 @@ Firestore: users/{uid}/journals/{journalId}
 ### Security Controls
 
 - ✅ **Server-Side Secret Isolation** — Gemini API key is never exposed to the browser bundle
-- ✅ **User Data Isolation** — All Firestore paths are scoped to `users/{uid}`
+- ✅ **User Data Isolation** — All Firestore paths are strictly scoped to `users/{uid}`
 - ✅ **Hardened Firestore Rules** — Zero cross-user access permitted at the database level
 - ✅ **Firebase Auth (Google OAuth)** — UID is the authoritative identity anchor
 - ✅ **Input Sanitization & Payload Limits** — All API inputs are validated, trimmed, and length-capped
 - ✅ **Secure HTTP Headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
 - ✅ **No Stack Trace Leakage** — Global error handler returns opaque error messages only
-- ✅ **Google Cloud Secret Manager** — Optional production-grade secret resolution
 
 ---
 
@@ -74,7 +73,6 @@ Firestore: users/{uid}/journals/{journalId}
 | **AI** | Google Gemini (`gemini-2.0-flash`) via `@google/genai` |
 | **Auth** | Firebase Authentication (Google Sign-In) |
 | **Database** | Cloud Firestore |
-| **Secret Management** | Google Cloud Secret Manager / Environment Variables |
 | **Build** | Vite (frontend), esbuild (server bundle) |
 | **Animations** | Motion (Framer Motion) |
 
@@ -106,10 +104,9 @@ MindVault-AI/
 │   └── App.tsx                        # Root app & layout
 ├── server/
 │   ├── gemini.ts                      # Gemini API server-side logic
-│   └── secrets.ts                     # Secret Manager / env resolution
+│   └── secrets.ts                     # Secure key resolution
 ├── server.ts                          # Express server entry point
 ├── firestore.rules                    # Firestore security rules
-├── firebase-applet-config.json        # Firebase project config
 ├── vite.config.ts                     # Vite build config
 ├── tsconfig.json                      # TypeScript config
 └── package.json
@@ -119,12 +116,6 @@ MindVault-AI/
 
 ## 🚀 Getting Started (Local Development)
 
-### Prerequisites
-
-- Node.js 18+ or Bun
-- A [Gemini API Key](https://aistudio.google.com/app/apikey)
-- Firebase project (already configured — see `firebase-applet-config.json`)
-
 ### 1. Install dependencies
 
 ```bash
@@ -133,87 +124,19 @@ npm install
 
 ### 2. Configure environment
 
-```bash
-cp .env.example .env
-```
+Create a `.env` file based on `.env.example`:
 
-Edit `.env`:
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY="your_gemini_api_key"
 ```
 
-### 3. Start the dev server
+### 3. Start development
 
 ```bash
 npm run dev
 ```
 
 Open **http://localhost:3000** in your browser.
-
-> The dev server runs both the Express backend and Vite frontend together on port 3000.
-
----
-
-## 🚢 Deployment
-
-### Option A — Google AI Studio (Fastest)
-
-1. Open your project in [Google AI Studio](https://aistudio.google.com) → Build mode
-2. Set `GEMINI_API_KEY` in the **Secrets panel**
-3. Click **Deploy** — AI Studio deploys to Cloud Run automatically
-
-### Option B — Google Cloud Run (Production)
-
-```bash
-# Build
-npm run build
-
-# Store Gemini key in Secret Manager
-echo "YOUR_KEY" | gcloud secrets create gemini-api-key --data-file=-
-
-# Deploy
-gcloud run deploy mindvault-ai \
-  --image gcr.io/YOUR_PROJECT/mindvault-ai \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars GCP_PROJECT_ID=YOUR_PROJECT,NODE_ENV=production
-```
-
-After deploying, add your Cloud Run URL to **Firebase Console → Authentication → Authorized Domains**.
-
-### Option C — Local Production Build
-
-```bash
-npm run build
-npm run start
-```
-
----
-
-## 🔑 Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | ✅ | Gemini AI API key |
-| `GCP_PROJECT_ID` | Optional | Enables Google Cloud Secret Manager |
-| `GEMINI_SECRET_NAME` | Optional | Secret name (default: `gemini-api-key`) |
-| `NODE_ENV` | Optional | Set to `production` in Cloud Run |
-
----
-
-## 🔐 Firestore Security Rules
-
-Rules are in [`firestore.rules`](./firestore.rules). Deploy them with:
-
-```bash
-firebase deploy --only firestore:rules
-```
-
-The rules enforce:
-- Users can **only** read/write their own `users/{uid}` path
-- No cross-user access is possible at the database level
-- All write operations require authentication
 
 ---
 
@@ -222,39 +145,10 @@ The rules enforce:
 ```bash
 npm run dev        # Start development server (Express + Vite)
 npm run build      # Build frontend (Vite) + server (esbuild)
-npm run start      # Run production build
+npm run start      # Run production server
 npm run lint       # TypeScript type check (tsc --noEmit)
 npm run preview    # Preview Vite production build
 ```
-
----
-
-## 🧠 AI Features — How They Work
-
-### 1. Reflection Chat (`/api/gemini/chat`)
-- User sends a free-form thought or uses a curated prompt category
-- Gemini responds as a thoughtful, non-prescriptive reflection partner
-- Conversation continues for as many turns as needed (up to 60 messages)
-
-### 2. Journal Distillation (`/api/gemini/summarize`)
-- When the user clicks "Save as Journal", the full conversation is sent server-side
-- Gemini extracts: `title`, `summary`, `mood`, `topics`, `tags`, `keyThemes`
-- The structured entry is saved to Firestore under `users/{uid}/journals/{id}`
-
-### 3. Growth Insights (`/api/gemini/insights`)
-- Analyzes up to 30 recent journal entries
-- Returns: observations, trajectory patterns, mood distribution, recurring topics, and 3 tailored reflection prompts
-- The report is auto-saved to `users/{uid}/insights/{id}`
-
----
-
-## 🎨 Design System
-
-- **Primary palette**: Slate (dark) + Amber (accent)
-- **Typography**: Plus Jakarta Sans (body), Newsreader (serif headings)
-- **Dark mode**: Midnight Obsidian (`#020617` base)
-- **Light mode**: Sanctuary (`slate-50` base)
-- **Animations**: Micro-animations, pulse indicators, smooth transitions
 
 ---
 
@@ -271,9 +165,3 @@ Built for the **Gen AI Academy APAC Edition Ideathon** as a demonstration of:
 ## 📄 License
 
 This project was created for the Gen AI Academy APAC Ideathon. All rights reserved.
-
----
-
-<p align="center">
-  Built with ❤️ using <strong>Google Gemini</strong>, <strong>Firebase</strong>, and <strong>React</strong>
-</p>
