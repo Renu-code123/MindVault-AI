@@ -21,10 +21,10 @@ Every piece of data is scoped to the authenticated user's UID. No user can acces
 
 | Feature | Description |
 |---|---|
-| 🤖 **AI Reflection Chat** | Multi-turn conversation with Gemini to explore emotions, decisions, and goals |
+| 🤖 **AI Reflection Chat** | Multi-turn conversation with Gemini to explore emotions, decisions, and personal goals |
 | 📖 **Auto Journal Archiving** | Gemini distills each reflection session into a structured journal entry (title, summary, mood, topics, tags) |
-| 📊 **AI Growth Insights** | Longitudinal pattern detection across your journal history — mood rhythms, recurring topics, tailored prompts |
-| 🔒 **Security Audit View** | Live interactive demo of the zero-trust architecture with real cross-user isolation tests |
+| 📊 **AI Growth Insights** | Longitudinal pattern detection across journal history — mood rhythms, recurring topics, tailored prompts |
+| 🔒 **Security Audit View** | Interactive zero-trust architecture demonstration with cross-user isolation verification |
 | 🔍 **Journal Vault** | Searchable, filterable journal archive with grid/list views and JSON export |
 | 🎵 **Zen Soundscapes** | Ambient audio (rain, ocean waves, brown noise, theta binaural) for focus during reflection |
 | 🎤 **Voice Dictation** | Web Speech API integration for hands-free reflection input |
@@ -34,14 +34,14 @@ Every piece of data is scoped to the authenticated user's UID. No user can acces
 
 ## 🛡️ Security Architecture
 
-This app was designed with a **Security-First Engineering Constitution**:
+MindVault AI follows a strict **zero-trust design**:
 
 ```
 Browser (React)
     │
     │  Firebase ID Token (Bearer)
     ▼
-Express Server (Node.js)  ←── GEMINI_API_KEY never leaves here
+Express Server (Node.js)  ←── GEMINI_API_KEY isolated server-side
     │
     ├── /api/gemini/chat       → Gemini Flash (reflection)
     ├── /api/gemini/summarize  → Gemini Flash (journal distillation)
@@ -52,15 +52,14 @@ Firestore: users/{uid}/journals/{journalId}
            users/{uid}/insights/{insightId}
 ```
 
-### Security Controls
+### Key Security Controls
 
-- ✅ **Server-Side Secret Isolation** — Gemini API key is never exposed to the browser bundle
-- ✅ **User Data Isolation** — All Firestore paths are strictly scoped to `users/{uid}`
-- ✅ **Hardened Firestore Rules** — Zero cross-user access permitted at the database level
-- ✅ **Firebase Auth (Google OAuth)** — UID is the authoritative identity anchor
-- ✅ **Input Sanitization & Payload Limits** — All API inputs are validated, trimmed, and length-capped
+- ✅ **Server-Side Secret Isolation** — Gemini API key is never exposed to the browser
+- ✅ **User Data Isolation** — All database paths are strictly scoped to `users/{uid}`
+- ✅ **Hardened Firestore Rules** — Cross-user data access is blocked at the database layer
+- ✅ **Firebase Authentication** — Google OAuth UID is the authoritative identity anchor
+- ✅ **Input Sanitization** — All API inputs are validated and length-capped
 - ✅ **Secure HTTP Headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
-- ✅ **No Stack Trace Leakage** — Global error handler returns opaque error messages only
 
 ---
 
@@ -69,52 +68,15 @@ Firestore: users/{uid}/journals/{journalId}
 | Layer | Technology |
 |---|---|
 | **Frontend** | React 19, TypeScript, Tailwind CSS v4, Lucide React |
-| **Backend** | Node.js, Express, TypeScript (`tsx`) |
-| **AI** | Google Gemini (`gemini-2.0-flash`) via `@google/genai` |
+| **Backend** | Node.js, Express, TypeScript |
+| **AI Engine** | Google Gemini (`gemini-2.0-flash`) via `@google/genai` |
 | **Auth** | Firebase Authentication (Google Sign-In) |
 | **Database** | Cloud Firestore |
-| **Build** | Vite (frontend), esbuild (server bundle) |
 | **Animations** | Motion (Framer Motion) |
 
 ---
 
-## 📁 Project Structure
-
-```
-MindVault-AI/
-├── src/
-│   ├── components/
-│   │   ├── ChatReflectionView.tsx     # Multi-turn AI reflection chat
-│   │   ├── DashboardView.tsx          # Home dashboard with metrics
-│   │   ├── InsightsView.tsx           # AI Growth Insights
-│   │   ├── JournalListView.tsx        # Searchable journal archive
-│   │   ├── JournalDetailModal.tsx     # Journal entry detail & replay
-│   │   ├── SecurityAuditView.tsx      # Zero-trust live audit demo
-│   │   ├── ProfileView.tsx            # User identity & vault stats
-│   │   ├── LoginView.tsx              # Auth landing page
-│   │   └── Navigation.tsx             # Sidebar + mobile nav
-│   ├── context/
-│   │   ├── AuthContext.tsx            # Firebase Auth state
-│   │   └── ThemeContext.tsx           # Dark/light theme
-│   ├── utils/
-│   │   ├── ambientSound.ts            # Web Audio API soundscapes
-│   │   └── speechRecognition.ts       # Web Speech API
-│   ├── firebase.ts                    # Firebase client init
-│   ├── types.ts                       # Shared TypeScript types
-│   └── App.tsx                        # Root app & layout
-├── server/
-│   ├── gemini.ts                      # Gemini API server-side logic
-│   └── secrets.ts                     # Secure key resolution
-├── server.ts                          # Express server entry point
-├── firestore.rules                    # Firestore security rules
-├── vite.config.ts                     # Vite build config
-├── tsconfig.json                      # TypeScript config
-└── package.json
-```
-
----
-
-## 🚀 Getting Started (Local Development)
+## 🚀 Quick Start
 
 ### 1. Install dependencies
 
@@ -122,15 +84,15 @@ MindVault-AI/
 npm install
 ```
 
-### 2. Configure environment
+### 2. Configure API key
 
-Create a `.env` file based on `.env.example`:
+Copy `.env.example` to `.env` and add your Gemini API key:
 
 ```env
 GEMINI_API_KEY="your_gemini_api_key"
 ```
 
-### 3. Start development
+### 3. Start app
 
 ```bash
 npm run dev
@@ -140,28 +102,16 @@ Open **http://localhost:3000** in your browser.
 
 ---
 
-## 📜 Available Scripts
+## 🏆 Ideathon Highlights
 
-```bash
-npm run dev        # Start development server (Express + Vite)
-npm run build      # Build frontend (Vite) + server (esbuild)
-npm run start      # Run production server
-npm run lint       # TypeScript type check (tsc --noEmit)
-npm run preview    # Preview Vite production build
-```
-
----
-
-## 🏆 Ideathon Context
-
-Built for the **Gen AI Academy APAC Edition Ideathon** as a demonstration of:
+Built for the **Gen AI Academy APAC Edition Ideathon** demonstrating:
 - Production-grade security architecture with Google AI
 - Zero-trust principles applied to an AI-powered consumer app
-- Responsible AI design (user data isolation, no cross-contamination)
+- Responsible AI design with complete user data isolation
 - Full-stack integration of Firebase Auth + Firestore + Gemini API
 
 ---
 
 ## 📄 License
 
-This project was created for the Gen AI Academy APAC Ideathon. All rights reserved.
+Created for the Gen AI Academy APAC Ideathon. All rights reserved.
