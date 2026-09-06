@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Default Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidJournal(data, userId) {
+      return data.userId == userId &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+        data.summary is string && data.summary.size() <= 4000 &&
+        data.mood is string && data.mood.size() <= 50 &&
+        data.topics is list && data.topics.size() <= 20 &&
+        data.tags is list && data.tags.size() <= 20 &&
+        data.conversation is list && data.conversation.size() <= 150 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidInsight(data, userId) {
+      return data.userId == userId &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+        data.observations is list && data.observations.size() <= 20 &&
+        data.reflectionPrompts is list && data.reflectionPrompts.size() <= 20 &&
+        data.patterns is list && data.patterns.size() <= 20 &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // User profile document
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create, update: if isOwner(userId) && isValidId(userId) && incoming().uid == userId;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Private User Journals
+      match /journals/{journalId} {
+        allow get: if isOwner(userId) && isValidId(journalId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(journalId) && isValidJournal(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(journalId) && isValidJournal(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(journalId);
+      }
+
+      // Private User Insights
+      match /insights/{insightId} {
+        allow get: if isOwner(userId) && isValidId(insightId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(insightId) && isValidInsight(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(insightId) && isValidInsight(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(insightId);
+      }
+    }
+  }
+}

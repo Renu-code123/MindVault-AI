@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "Journal": {
+      "title": "Journal",
+      "description": "A private reflection journal entry containing structured reflection and full conversation history.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Title of the journal reflection"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 3000,
+          "description": "Structured executive summary of the reflection"
+        },
+        "mood": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Detected mood or sentiment"
+        },
+        "topics": {
+          "type": "array",
+          "description": "Key topics discussed"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Categorization tags"
+        },
+        "conversation": {
+          "type": "array",
+          "description": "Full multi-turn conversation messages"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Author UID"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Creation timestamp ISO string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Last update timestamp ISO string"
+        }
+      },
+      "required": ["title", "summary", "mood", "topics", "tags", "conversation", "userId", "createdAt", "updatedAt"]
+    },
+    "Insight": {
+      "title": "Insight",
+      "description": "AI Growth Insights generated from historical journal reflections.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Insight report title"
+        },
+        "observations": {
+          "type": "array",
+          "description": "Curated calibrated observations"
+        },
+        "reflectionPrompts": {
+          "type": "array",
+          "description": "Suggested personal reflection questions"
+        },
+        "patterns": {
+          "type": "array",
+          "description": "Identified recurring reflection patterns"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Owner UID"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Creation timestamp ISO string"
+        }
+      },
+      "required": ["title", "observations", "reflectionPrompts", "patterns", "userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/journals/{journalId}": {
+      "schema": {
+        "$ref": "#/entities/Journal"
+      },
+      "description": "Isolated private journal entries belonging strictly to the authenticated user."
+    },
+    "/users/{userId}/insights/{insightId}": {
+      "schema": {
+        "$ref": "#/entities/Insight"
+      },
+      "description": "User-isolated AI growth insights and reflection analytics."
+    }
+  }
+}

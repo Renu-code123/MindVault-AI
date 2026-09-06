@@ -1,0 +1,6 @@
+{
+  "name": "MindVault AI",
+  "description": "Private AI-powered journaling, personal reflection, and growth insights with isolated user data and zero-trust security.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
