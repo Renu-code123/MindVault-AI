@@ -94,17 +94,17 @@ export function JournalListView({
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto transition-colors">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center space-x-2">
             <span>Journal Vault</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
               {journals.length} {journals.length === 1 ? "entry" : "entries"}
             </span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Privately isolated in Cloud Firestore &middot; Accessible only by your authenticated UID
           </p>
         </div>
@@ -114,7 +114,7 @@ export function JournalListView({
             <button
               onClick={handleExportAll}
               title="Export complete vault as JSON backup"
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
               <span>Export Vault</span>
@@ -123,16 +123,16 @@ export function JournalListView({
 
           <button
             onClick={onStartReflection}
-            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-950 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 dark:text-slate-950" />
             <span>New Reflection</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3 transition-colors">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           {/* Search */}
           <div className="relative flex-1">
@@ -143,12 +143,12 @@ export function JournalListView({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search reflections by title, summary, or topics..."
-              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-slate-400 transition-colors"
+              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-amber-500 transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -162,7 +162,7 @@ export function JournalListView({
               id="journal-mood-select"
               value={selectedMood}
               onChange={(e) => setSelectedMood(e.target.value)}
-              className="text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 text-slate-700 focus:outline-none focus:border-slate-400"
+              className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 px-3 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-amber-500 cursor-pointer"
             >
               {uniqueMoods.map((m) => (
                 <option key={m} value={m}>
@@ -176,18 +176,18 @@ export function JournalListView({
           <button
             id="journal-sort-toggle"
             onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
-            className="flex items-center space-x-1.5 px-3 py-2 text-xs rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors shrink-0 cursor-pointer"
+            className="flex items-center space-x-1.5 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors shrink-0 cursor-pointer"
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
             <span>{sortOrder === "desc" ? "Newest First" : "Oldest First"}</span>
           </button>
 
           {/* Grid / List layout toggle */}
-          <div className="flex items-center border border-slate-200 rounded-xl p-0.5 bg-slate-100/60 shrink-0">
+          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 bg-slate-100/60 dark:bg-slate-800 shrink-0">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === "grid" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-400 hover:text-slate-700"
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === "grid" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
               title="Grid View"
             >
@@ -195,8 +195,8 @@ export function JournalListView({
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === "list" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-400 hover:text-slate-700"
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === "list" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
               title="List View"
             >
@@ -207,14 +207,14 @@ export function JournalListView({
 
         {/* Topic Filter Chips */}
         {topTopics.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 text-xs">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1">Filter by topic:</span>
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mr-1">Filter by topic:</span>
             <button
               onClick={() => setSelectedTopic("All")}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
                 selectedTopic === "All"
-                  ? "bg-slate-900 text-white shadow-2xs"
-                  : "bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  ? "bg-slate-900 dark:bg-amber-400 text-white dark:text-slate-950 shadow-2xs font-semibold"
+                  : "bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
               All Topics
@@ -223,10 +223,10 @@ export function JournalListView({
               <button
                 key={topic}
                 onClick={() => setSelectedTopic(topic === selectedTopic ? "All" : topic)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
                   selectedTopic === topic
-                    ? "bg-indigo-900 text-white shadow-2xs"
-                    : "bg-indigo-50/70 border border-indigo-100 text-indigo-700 hover:bg-indigo-100"
+                    ? "bg-indigo-900 dark:bg-indigo-600 text-white shadow-2xs"
+                    : "bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60"
                 }`}
               >
                 {topic}
@@ -238,15 +238,15 @@ export function JournalListView({
 
       {/* Grid of Journal Cards */}
       {filteredJournals.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-4 transition-colors">
+          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
             <BookOpen className="w-6 h-6" />
           </div>
           <div className="max-w-md mx-auto">
-            <h3 className="text-base font-bold text-slate-900 font-serif">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 font-serif">
               {journals.length === 0 ? "Your Vault is Clean & Ready" : "No matching reflections"}
             </h3>
-            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
               {journals.length === 0
                 ? "Your private reflection vault is waiting. Begin your first dialogue with Gemini or pen a direct journal entry to begin your timeline."
                 : "Try clearing search keywords or resetting topic filters to view all entries."}
@@ -255,9 +255,9 @@ export function JournalListView({
           {journals.length === 0 && (
             <button
               onClick={onStartReflection}
-              className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+              className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-amber-600 transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 dark:text-slate-950" />
               <span>Begin First Reflection</span>
             </button>
           )}
@@ -270,13 +270,13 @@ export function JournalListView({
               <div
                 key={journal.id}
                 onClick={() => onSelectJournal(journal)}
-                className="bg-white border border-slate-200/90 hover:border-slate-400/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group space-y-3"
+                className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-slate-400/80 dark:hover:border-slate-600 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between cursor-pointer group space-y-3"
               >
                 <div className="space-y-2.5">
                   {/* Header: Mood & Date */}
                   <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-800 text-[11px] font-medium">
-                      <Smile className="w-3 h-3 text-amber-600" />
+                    <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] font-medium">
+                      <Smile className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                       <span>{journal.mood}</span>
                     </span>
 
@@ -292,23 +292,23 @@ export function JournalListView({
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-base font-bold font-serif text-slate-900 group-hover:text-amber-900 transition-colors line-clamp-1">
+                  <h3 className="text-base font-bold font-serif text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
                     {journal.title}
                   </h3>
 
                   {/* Summary */}
-                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
                     {journal.summary}
                   </p>
                 </div>
 
                 {/* Footer: Topics & Entry Type */}
-                <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
                   <div className="flex flex-wrap gap-1">
                     {journal.topics?.slice(0, 2).map((t, idx) => (
                       <span
                         key={idx}
-                        className="px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200/60 text-[10px] text-slate-600 font-medium"
+                        className="px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 text-[10px] text-slate-600 dark:text-slate-300 font-medium"
                       >
                         {t}
                       </span>
@@ -335,23 +335,23 @@ export function JournalListView({
         </div>
       ) : (
         /* List / Table Mode */
-        <div className="bg-white border border-slate-200/90 rounded-2xl divide-y divide-slate-100 shadow-2xs overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800 shadow-2xs overflow-hidden transition-colors">
           {filteredJournals.map((journal) => (
             <div
               key={journal.id}
               onClick={() => onSelectJournal(journal)}
-              className="p-4 sm:px-6 hover:bg-slate-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+              className="p-4 sm:px-6 hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
             >
               <div className="space-y-1 max-w-2xl">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
                     {journal.mood}
                   </span>
-                  <h3 className="text-sm font-bold font-serif text-slate-900 group-hover:text-amber-900 transition-colors line-clamp-1">
+                  <h3 className="text-sm font-bold font-serif text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
                     {journal.title}
                   </h3>
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
                   {journal.summary}
                 </p>
               </div>
@@ -366,7 +366,7 @@ export function JournalListView({
                     })}
                   </span>
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
                   {journal.conversation?.length || 1} logs
                 </span>
               </div>

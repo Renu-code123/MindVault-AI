@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase.ts";
 import { AuthProvider, useAuth } from "./context/AuthContext.tsx";
+import { ThemeProvider, useTheme } from "./context/ThemeContext.tsx";
 import { ActiveTab, JournalEntry } from "./types.ts";
 import { Navigation } from "./components/Navigation.tsx";
 import { LoginView } from "./components/LoginView.tsx";
@@ -12,10 +13,11 @@ import { JournalDetailModal } from "./components/JournalDetailModal.tsx";
 import { InsightsView } from "./components/InsightsView.tsx";
 import { SecurityAuditView } from "./components/SecurityAuditView.tsx";
 import { ProfileView } from "./components/ProfileView.tsx";
-import { Lock } from "lucide-react";
+import { Lock, Sun, Moon, Sparkles } from "lucide-react";
 
 function AuthenticatedApp() {
   const { user, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [selectedJournal, setSelectedJournal] = useState<JournalEntry | null>(null);
@@ -57,12 +59,12 @@ function AuthenticatedApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center shadow-xs mb-3 animate-pulse">
-          <Lock className="w-6 h-6 stroke-[2.2]" />
+      <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-100">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-lg mb-4 animate-pulse vault-glow">
+          <Lock className="w-7 h-7 stroke-[2.2]" />
         </div>
-        <div className="text-sm font-semibold text-slate-800">Verifying Vault Session...</div>
-        <div className="text-xs text-slate-400 mt-1">Establishing authenticated zero-trust connection</div>
+        <div className="text-base font-semibold tracking-wide text-slate-100">Verifying Vault Session...</div>
+        <div className="text-xs text-slate-400 mt-1 font-mono">Establishing authenticated zero-trust connection</div>
       </div>
     );
   }
@@ -72,7 +74,7 @@ function AuthenticatedApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row antialiased">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col md:flex-row antialiased transition-colors duration-300">
       {/* Navigation Sidebar (Desktop) / Bottom Nav (Mobile) */}
       <Navigation
         activeTab={activeTab}
@@ -88,10 +90,10 @@ function AuthenticatedApp() {
       {/* Main App Content Viewport */}
       <main className="flex-1 flex flex-col min-w-0 pb-20 md:pb-8">
         {/* Top Minimal Bar */}
-        <header className="h-14 border-b border-slate-200/80 bg-white/70 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-30">
+        <header className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 transition-colors">
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              {activeTab === "dashboard" && "Overview"}
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              {activeTab === "dashboard" && "Vault Overview"}
               {activeTab === "chat" && "Reflection Partner"}
               {activeTab === "journals" && "Archive Vault"}
               {activeTab === "insights" && "Growth Insights"}
@@ -101,13 +103,22 @@ function AuthenticatedApp() {
           </div>
 
           <div className="flex items-center space-x-3 text-xs">
-            <div className="hidden sm:flex items-center space-x-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="font-medium text-[11px]">Zero-Trust Enforced</span>
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title={theme === "midnight" ? "Switch to Sanctuary Light" : "Switch to Midnight Obsidian"}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              {theme === "midnight" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            <div className="hidden sm:flex items-center space-x-1.5 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200/80 dark:border-emerald-800/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-medium text-[11px]">Zero-Trust Active</span>
             </div>
 
-            <div className="flex items-center space-x-2 text-slate-700 font-medium">
-              <span className="hidden sm:inline text-xs">{user.displayName || "User"}</span>
+            <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 font-medium">
+              <span className="hidden sm:inline text-xs">{user.displayName || "Explorer"}</span>
             </div>
           </div>
         </header>
@@ -178,8 +189,10 @@ function AuthenticatedApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AuthenticatedApp />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AuthenticatedApp />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

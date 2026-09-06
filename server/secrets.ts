@@ -34,8 +34,8 @@ export async function getGeminiApiKey(): Promise<{ apiKey: string; source: strin
     }
   }
 
-  // Fallback to process.env.GEMINI_API_KEY injected securely by AI Studio / Cloud Run
-  const envKey = process.env.GEMINI_API_KEY;
+  // Fallback to process.env.GEMINI_API_KEY or process.env.API_KEY injected securely by AI Studio / Cloud Run
+  const envKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (envKey && envKey.trim().length > 0) {
     cachedKey = envKey.trim();
     secretSource = "Environment Secret";

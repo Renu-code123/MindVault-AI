@@ -18,24 +18,67 @@ async function getAI(): Promise<GoogleGenAI> {
   return aiClient;
 }
 
+// Ordered list of candidate models for reliable generation and fallback
+const CANDIDATE_MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-3.8-flash",
+].filter(Boolean) as string[];
+
+/**
+ * Executes a Gemini generateContent request with automatic fallback across candidate models
+ * to ensure bulletproof resilience even if one model tier is unavailable.
+ */
+async function generateWithFallback(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  buildParams: (model: string) => any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+  const ai = await getAI();
+  let lastError: unknown = null;
+
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const params = buildParams(model);
+      const response = await ai.models.generateContent(params);
+      return response;
+    } catch (err: unknown) {
+      lastError = err;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      // If error indicates model is not found or unsupported, attempt next candidate
+      if (
+        errMsg.includes("not found") ||
+        errMsg.includes("404") ||
+        errMsg.includes("unsupported") ||
+        errMsg.includes("models/")
+      ) {
+        console.warn(`Model ${model} unavailable, falling back to next candidate model.`);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError || new Error("Failed to generate content with any available Gemini model.");
+}
+
 export interface ChatMessage {
   role: "user" | "model";
   content: string;
 }
 
 /**
- * Multi-turn reflection chat using gemini-3.8-flash
+ * Multi-turn reflection chat using server-side Gemini
  */
 export async function generateReflectionChatReply(messages: ChatMessage[]): Promise<string> {
-  const ai = await getAI();
-
   const formattedContents = messages.map((m) => ({
     role: m.role,
     parts: [{ text: m.content }],
   }));
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
+  const response = await generateWithFallback((model) => ({
+    model,
     contents: formattedContents,
     config: {
       systemInstruction:
@@ -49,7 +92,7 @@ export async function generateReflectionChatReply(messages: ChatMessage[]): Prom
         "5. Respect user autonomy and privacy.",
       temperature: 0.7,
     },
-  });
+  }));
 
   const reply = response.text?.trim();
   if (!reply) {
@@ -70,8 +113,6 @@ export interface JournalSummary {
  * Structured journal entry generation from a completed reflection conversation
  */
 export async function generateJournalSummary(conversation: ChatMessage[]): Promise<JournalSummary> {
-  const ai = await getAI();
-
   const conversationText = conversation
     .map((m) => `${m.role === "user" ? "User" : "MindVault AI"}: ${m.content}`)
     .join("\n\n");
@@ -86,8 +127,8 @@ export async function generateJournalSummary(conversation: ChatMessage[]): Promi
     `- 3-5 core topics (e.g., "Career Strategy", "Work-Life Balance", "Personal Growth", "Study Goals", "Mindfulness")\n` +
     `- 3-6 hashtags for indexing (e.g., "#clarity", "#focus", "#resilience")`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
+  const response = await generateWithFallback((model) => ({
+    model,
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -111,7 +152,7 @@ export async function generateJournalSummary(conversation: ChatMessage[]): Promi
         required: ["title", "summary", "mood", "topics", "tags"],
       },
     },
-  });
+  }));
 
   const rawJson = response.text?.trim();
   if (!rawJson) {
@@ -152,8 +193,6 @@ export interface AIInsightsReport {
  * AI Growth Insights analyzing user's historical journals strictly within the authenticated boundary
  */
 export async function generateGrowthInsights(journals: JournalInsightInput[]): Promise<AIInsightsReport> {
-  const ai = await getAI();
-
   const journalDigest = journals.map((j, idx) => ({
     entry: idx + 1,
     date: j.createdAt,
@@ -175,8 +214,8 @@ export async function generateGrowthInsights(journals: JournalInsightInput[]): P
     `6. Provide 2-4 observed patterns with context.\n` +
     `7. Provide a warm 1-paragraph growth summary.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
+  const response = await generateWithFallback((model) => ({
+    model,
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -212,7 +251,7 @@ export async function generateGrowthInsights(journals: JournalInsightInput[]): P
         required: ["observations", "reflectionPrompts", "patterns", "growthSummary"],
       },
     },
-  });
+  }));
 
   const rawJson = response.text?.trim();
   if (!rawJson) {

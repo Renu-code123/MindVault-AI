@@ -5,6 +5,23 @@
   --font-serif: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
 }
 
+/* Custom dark mode & ambient backdrop styles */
+:root {
+  color-scheme: light dark;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Obsidian and Sanctuary ambient backgrounds */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Refined custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -14,9 +31,36 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Subtle glowing borders */
+.vault-glow {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.15);
+}
+
+.vault-glow-emerald {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.2);
+}
+
+/* Audio wave pulse animation for voice dictation */
+@keyframes audioWave {
+  0%, 100% { height: 6px; }
+  50% { height: 22px; }
+}
+
+.audio-bar-1 { animation: audioWave 0.8s ease-in-out infinite; }
+.audio-bar-2 { animation: audioWave 0.8s ease-in-out infinite 0.2s; }
+.audio-bar-3 { animation: audioWave 0.8s ease-in-out infinite 0.4s; }
+.audio-bar-4 { animation: audioWave 0.8s ease-in-out infinite 0.1s; }
+.audio-bar-5 { animation: audioWave 0.8s ease-in-out infinite 0.3s; }

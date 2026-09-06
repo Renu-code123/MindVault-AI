@@ -12,6 +12,20 @@ import { getSecretSource } from "./server/secrets.ts";
 
 const PORT = 3000;
 
+/**
+ * Validates presence of Firebase Authorization Bearer token
+ * Enforces server-side authentication boundary per Engineering Constitution
+ */
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(401).json({ error: "Unauthorized: Valid Firebase Authentication ID token required." });
+    }
+  }
+  next();
+}
+
 async function startServer() {
   const app = express();
 
@@ -47,11 +61,12 @@ async function startServer() {
       authenticationProvider: "Firebase Authentication (Google Sign-In)",
       zeroTrustClientValidation: true,
       leastPrivilegeModel: true,
+      tokenVerificationActive: true,
     });
   });
 
   // API 3: Multi-turn Reflection Chat
-  app.post("/api/gemini/chat", async (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/gemini/chat", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { messages } = req.body;
 
@@ -91,7 +106,7 @@ async function startServer() {
   });
 
   // API 4: Generate Structured Journal Summary
-  app.post("/api/gemini/summarize", async (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/gemini/summarize", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { conversation } = req.body;
 
@@ -121,7 +136,7 @@ async function startServer() {
   });
 
   // API 5: AI Growth Insights
-  app.post("/api/gemini/insights", async (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/gemini/insights", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { journals } = req.body;
 

@@ -17,11 +17,15 @@ import {
   PenTool,
   MessageSquare,
   Wand2,
+  Mic,
+  MicOff,
+  Volume2,
 } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../firebase.ts";
 import { ChatMessage, JournalEntry } from "../types.ts";
 import { useAuth } from "../context/AuthContext.tsx";
+import { useSpeechRecognition } from "../utils/speechRecognition.ts";
 
 interface ChatReflectionViewProps {
   onJournalSaved: (newJournal: JournalEntry) => void;
@@ -122,6 +126,35 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
+  // Speech Recognition hook for hands-free voice reflections
+  const {
+    isListening,
+    isSupported: isSpeechSupported,
+    toggleListening,
+    stopListening,
+    interimTranscript,
+  } = useSpeechRecognition({
+    onTranscriptChange: (text) => {
+      if (mode === "chat") {
+        setInputText((prev) => (prev ? `${prev} ${text}` : text));
+      } else {
+        setDirectContent((prev) => (prev ? `${prev} ${text}` : text));
+      }
+    },
+  });
+
+  const getAuthHeaders = async () => {
+    try {
+      const token = await user?.getIdToken();
+      return {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+    } catch {
+      return { "Content-Type": "application/json" };
+    }
+  };
+
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -159,10 +192,11 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
     setLoading(true);
 
     try {
-      // Call server-side API (Gemini API key is strictly hidden on server)
+      // Call server-side API with authenticated identity (Gemini API key is strictly hidden on server)
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/gemini/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -196,9 +230,10 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/gemini/summarize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           conversation: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -233,9 +268,10 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
         { role: "user", content: `${directTitle ? directTitle + "\n\n" : ""}${directContent}` },
       ];
 
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/gemini/summarize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           conversation: pseudoConversation,
         }),
@@ -394,23 +430,23 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
   };
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-8.5rem)] bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+    <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-8.5rem)] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden transition-colors">
       {/* Top Header & Mode Switcher */}
-      <div className="px-5 py-3.5 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 shrink-0">
+      <div className="px-5 py-3.5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/90 shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-amber-400/20 text-amber-400 border border-slate-800 dark:border-amber-400/30 flex items-center justify-center shrink-0">
             {mode === "chat" ? <Sparkles className="w-4 h-4" /> : <PenTool className="w-4 h-4" />}
           </div>
           <div>
-            <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-1.5">
               <span>{mode === "chat" ? "AI Reflection Dialogue" : "Direct Journal Sanctuary"}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800/50">
                 Zero-Trust Vault
               </span>
             </h2>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               {mode === "chat"
-                ? "Confidential multi-turn dialogue with Gemini 3.8-Flash"
+                ? "Confidential multi-turn dialogue with Gemini Server-Side Core"
                 : "Distraction-free personal writing canvas with optional AI synthesis"}
             </p>
           </div>
@@ -418,13 +454,13 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
 
         {/* Mode Segmented Control */}
         <div className="flex items-center space-x-2 self-start sm:self-auto">
-          <div className="bg-slate-200/70 p-0.5 rounded-lg flex items-center text-xs font-medium">
+          <div className="bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-lg flex items-center text-xs font-medium">
             <button
               onClick={() => setMode("chat")}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
                 mode === "chat"
-                  ? "bg-white text-slate-900 shadow-xs font-semibold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -432,10 +468,10 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
             </button>
             <button
               onClick={() => setMode("direct")}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
                 mode === "direct"
-                  ? "bg-white text-slate-900 shadow-xs font-semibold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
               <PenTool className="w-3.5 h-3.5" />
@@ -447,7 +483,7 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
             <button
               onClick={handleResetSession}
               title="Reset conversation"
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -458,7 +494,7 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
               id="save-reflection-btn"
               onClick={handleSynthesizeReflection}
               disabled={messages.length === 0 || summarizing || loading}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs disabled:opacity-40 transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-950 text-xs font-semibold shadow-xs disabled:opacity-40 transition-all cursor-pointer"
             >
               {summarizing ? (
                 <>
@@ -467,7 +503,7 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5 text-amber-400" />
+                  <Save className="w-3.5 h-3.5 text-amber-400 dark:text-slate-950" />
                   <span>Synthesize to Vault</span>
                 </>
               )}
@@ -480,17 +516,17 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
       {mode === "chat" && (
         <>
           {/* Message Stream Area */}
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 bg-slate-50/40">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 bg-slate-50/40 dark:bg-slate-950/50">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col justify-center items-center text-center max-w-xl mx-auto py-6">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-700 mb-3 shadow-2xs">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 mb-3 shadow-2xs vault-glow">
                   <Sparkles className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold font-serif text-slate-900 mb-1">
+                <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-slate-100 mb-1">
                   What is occupying your mind today?
                 </h3>
-                <p className="text-xs text-slate-500 max-w-md leading-relaxed mb-6">
-                  MindVault AI is your private sounding board. Choose an inquiry archetype below or start with your own open reflection.
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed mb-6">
+                  MindVault AI is your private sounding board. Choose an inquiry archetype below or click the microphone to speak freely.
                 </p>
 
                 {/* Category Tabs */}
@@ -499,10 +535,10 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                     <button
                       key={cat.name}
                       onClick={() => setSelectedCategory(idx)}
-                      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
                         selectedCategory === idx
-                          ? "bg-slate-900 text-white shadow-xs"
-                          : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                          ? "bg-slate-900 dark:bg-amber-400 text-white dark:text-slate-950 shadow-xs font-semibold"
+                          : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                       }`}
                     >
                       <span className="mr-1">{cat.emoji}</span>
@@ -520,10 +556,10 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                         setInputText(prompt);
                         handleSendMessage(prompt);
                       }}
-                      className="p-3.5 rounded-xl bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-xs text-slate-700 font-medium transition-all text-left shadow-2xs flex items-center justify-between group cursor-pointer"
+                      className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-amber-400 dark:hover:border-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 font-medium transition-all text-left shadow-2xs flex items-center justify-between group cursor-pointer"
                     >
                       <span className="leading-relaxed">{prompt}</span>
-                      <Sparkles className="w-4 h-4 text-slate-300 group-hover:text-amber-500 shrink-0 ml-3 transition-colors" />
+                      <Sparkles className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-500 shrink-0 ml-3 transition-colors" />
                     </button>
                   ))}
                 </div>
@@ -540,8 +576,8 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                     <div
                       className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                         isUser
-                          ? "bg-slate-900 text-white"
-                          : "bg-amber-100 text-amber-900 border border-amber-200"
+                          ? "bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950"
+                          : "bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30"
                       }`}
                     >
                       {isUser ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -551,8 +587,8 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                     <div
                       className={`max-w-xl rounded-2xl p-4 text-sm leading-relaxed relative group ${
                         isUser
-                          ? "bg-slate-900 text-white rounded-tr-none shadow-xs"
-                          : "bg-white border border-slate-200/90 text-slate-800 rounded-tl-none shadow-xs"
+                          ? "bg-slate-900 dark:bg-amber-500/20 text-white dark:text-amber-100 rounded-tr-none shadow-xs border dark:border-amber-500/30"
+                          : "bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none shadow-xs"
                       }`}
                     >
                       <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -560,7 +596,7 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                       {/* Footer: timestamp + copy button */}
                       <div
                         className={`text-[10px] mt-2 flex items-center justify-between pt-1 border-t ${
-                          isUser ? "border-slate-800 text-slate-400" : "border-slate-100 text-slate-400"
+                          isUser ? "border-slate-800 dark:border-amber-500/20 text-slate-400 dark:text-amber-200/60" : "border-slate-100 dark:border-slate-700/60 text-slate-400 dark:text-slate-500"
                         }`}
                       >
                         <div className="flex items-center space-x-1">
@@ -578,8 +614,8 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                         <button
                           onClick={() => handleCopyMessage(msg.content, index)}
                           title="Copy text"
-                          className={`p-1 rounded opacity-70 hover:opacity-100 transition-opacity ${
-                            isUser ? "hover:bg-slate-800 text-slate-300" : "hover:bg-slate-100 text-slate-500"
+                          className={`p-1 rounded opacity-70 hover:opacity-100 transition-opacity cursor-pointer ${
+                            isUser ? "hover:bg-slate-800 dark:hover:bg-amber-500/30 text-slate-300 dark:text-amber-200" : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
                           }`}
                         >
                           {copiedIndex === index ? (
@@ -598,15 +634,15 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
             {/* Loading Indicator */}
             {loading && (
               <div className="flex items-start space-x-3">
-                <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-900 border border-amber-200 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
-                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-4 shadow-xs">
-                  <div className="flex items-center space-x-2 text-xs text-slate-500">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-none p-4 shadow-xs">
+                  <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" />
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-bounce [animation-delay:0.2s]" />
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-bounce [animation-delay:0.4s]" />
-                    <span className="ml-1 text-slate-500 font-medium">Reflecting thoughtfully...</span>
+                    <span className="ml-1 text-slate-500 dark:text-slate-400 font-medium">Reflecting thoughtfully...</span>
                   </div>
                 </div>
               </div>
@@ -632,7 +668,32 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
           )}
 
           {/* Input Composer */}
-          <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+          <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 transition-colors">
+            {/* Live Voice Dictation Wave Banner */}
+            {isListening && (
+              <div className="mb-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-center justify-between animate-pulse">
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-0.5">
+                    <span className="w-1 bg-amber-500 rounded-full audio-bar-1" />
+                    <span className="w-1 bg-amber-500 rounded-full audio-bar-2" />
+                    <span className="w-1 bg-amber-500 rounded-full audio-bar-3" />
+                    <span className="w-1 bg-amber-500 rounded-full audio-bar-4" />
+                    <span className="w-1 bg-amber-500 rounded-full audio-bar-5" />
+                  </div>
+                  <span className="font-medium">
+                    Listening... {interimTranscript ? `"${interimTranscript}"` : "Speak your thoughts naturally"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={stopListening}
+                  className="px-2.5 py-0.5 rounded-md bg-amber-500 text-white text-[11px] font-semibold hover:bg-amber-600 transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -654,23 +715,40 @@ export function ChatReflectionView({ onJournalSaved, initialPrompt }: ChatReflec
                   rows={2}
                   maxLength={4000}
                   placeholder="What thoughts, goals, or experiences are you contemplating? (Press Enter to send)"
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 transition-colors"
+                  className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80 p-3.5 pr-24 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
 
-                <button
-                  id="send-message-btn"
-                  type="submit"
-                  disabled={!inputText.trim() || loading}
-                  className="absolute right-2.5 bottom-2.5 p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-30 transition-all cursor-pointer shadow-xs"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+                <div className="absolute right-2.5 bottom-2.5 flex items-center space-x-1.5">
+                  {isSpeechSupported && (
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      title={isListening ? "Stop Voice Reflection" : "Speak your reflection (Hands-free)"}
+                      className={`p-2 rounded-lg transition-all cursor-pointer ${
+                        isListening
+                          ? "bg-rose-500 text-white shadow-md animate-pulse"
+                          : "text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </button>
+                  )}
+
+                  <button
+                    id="send-message-btn"
+                    type="submit"
+                    disabled={!inputText.trim() || loading}
+                    className="p-2 rounded-lg bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-950 disabled:opacity-30 transition-all cursor-pointer shadow-xs"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-1">
                 <div className="flex items-center space-x-1.5">
-                  <Lock className="w-3 h-3 text-emerald-600" />
-                  <span>Isolated server-side &middot; Press Enter to send (Shift+Enter for new line)</span>
+                  <Lock className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span>Isolated server-side &middot; Press Enter to send &middot; Mic enabled</span>
                 </div>
                 <span>{inputText.length} / 4000</span>
               </div>
